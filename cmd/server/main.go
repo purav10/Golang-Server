@@ -13,7 +13,7 @@ import (
 )
 
 const (
-    writeWait = 10 * time.Second
+    writeWait = 60 * time.Second
     
     pongWait = 60 * time.Second
     
@@ -27,7 +27,7 @@ var upgrader = websocket.Upgrader{
     WriteBufferSize: 1024,
     CheckOrigin: func(r *http.Request) bool { return true },
 }
-
+// Client represents a connected websocket client
 type Client struct {
     ID       string
     conn     *websocket.Conn
@@ -36,11 +36,13 @@ type Client struct {
     mu       sync.Mutex
 }
 
+// Message represents the structure of websocket messages
 type Message struct {
     ID      string `json:"id"`
     Message string `json:"message"`
 }
 
+// Hub manages all connected clients and their message routing
 type Hub struct {
     clients    map[string]*Client
     register   chan *Client
@@ -48,6 +50,7 @@ type Hub struct {
     mu         sync.RWMutex
 }
 
+// NewHub creates and initializes a new Hub instance
 func NewHub() *Hub {
     return &Hub{
         clients:    make(map[string]*Client),
@@ -56,6 +59,7 @@ func NewHub() *Hub {
     }
 }
 
+// Run handles client registration and unregistration
 func (h *Hub) Run() {
     for {
         select {
@@ -74,9 +78,9 @@ func (h *Hub) Run() {
             }
             
             if len(connectedClients) > 0 {
-                clientList := fmt.Sprintf("Connected clients: %v", connectedClients)
-                client.send <- []byte(clientList)
+                log.Printf("Currently connected clients: %v", connectedClients)
             }
+
             h.mu.Unlock()
 
         case client := <-h.unregister:
@@ -90,6 +94,7 @@ func (h *Hub) Run() {
     }
 }
 
+// serveWs handles websocket connections and initializes client instance
 func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
     conn, err := upgrader.Upgrade(w, r, nil)
     if err != nil {
@@ -113,6 +118,7 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
     go client.readPump()
 }
 
+// readPump handles incoming messages from the websocket connection
 func (c *Client) readPump() {
     defer func() {
         log.Printf("Client disconnected. ID: %s", c.ID)
@@ -162,6 +168,7 @@ func (c *Client) readPump() {
     }
 }
 
+// writePump handles outgoing messages and ping/pong maintenance
 func (c *Client) writePump() {
     ticker := time.NewTicker(pingPeriod)
     defer func() {
