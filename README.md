@@ -12,6 +12,7 @@ A Golang-based WebSocket server implementation that supports multiple client con
 
 ```bash
 go get github.com/gorilla/websocket
+go get github.com/google/uuid
 ```
 
 ## Project Structure
