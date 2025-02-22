@@ -48,6 +48,7 @@ type Hub struct {
     register   chan *Client
     unregister chan *Client
     mu         sync.RWMutex
+    token      string
 }
 
 // NewHub creates and initializes a new Hub instance
@@ -56,6 +57,7 @@ func NewHub() *Hub {
         clients:    make(map[string]*Client),
         register:   make(chan *Client),
         unregister: make(chan *Client),
+        token: "abcd",
     }
 }
 
@@ -101,7 +103,12 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
         log.Println("Error during connection upgrade:", err)
         return
     }
-
+    if r.URL.Query().Get("token") != hub.token {
+        log.Println("Invalid token")
+        conn.Close()
+        return
+    }
+    
     clientID := uuid.New().String()
     log.Printf("New client connected. ID: %s", clientID)
 

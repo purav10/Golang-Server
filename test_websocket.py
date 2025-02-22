@@ -9,13 +9,11 @@ logging.basicConfig(
 )
 
 async def test_websocket():
-    uri = "ws://localhost:8080/ws"
+    uri = "ws://localhost:8080/ws?token=abcd"
     async with websockets.connect(uri) as websocket:
         logging.info("Connected to WebSocket server")
-
         websocket.ping_interval = 30
         websocket.ping_timeout = 10
-
         welcome_msg = await websocket.recv()
         logging.info(f"Received: {welcome_msg}")
 
